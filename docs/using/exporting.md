@@ -27,7 +27,7 @@ The archive will contain a few items:
 
 ### Converting exported data to CSV
 
-You can use the `jq` tool to convert the JSON files to CSV:
+You can use the [`jq`](https://jqlang.github.io/jq/) tool to convert the JSON files to CSV:
 
 To create a single column CSV with all your urls, in the directory with your json files:
 
@@ -38,5 +38,14 @@ jq -r '.[].url' *.json
 To create a CSV that also contains your labels, you can use this command:
 
 ```
-jq -r '[.[] | {url: .url, labels: (.labels | join(","))} | "\(.url),\"\(.labels)\""] | @csv' *.json
+jq -r '
+  (["url","title","note","tags","created"]), 
+  (.[] | [
+    .url,
+    (.title | gsub("\\n";" ") | gsub("\\r";" ") | gsub("\"";"''") | gsub("[^[:print:]]";" ") | gsub("\\s+";" ")),
+    (.description | gsub("\\n";" ") | gsub("\\r";" ") | gsub("\"";"''") | gsub("[^[:print:]]";" ") | gsub("\\s+";" ")),
+    ([.labels[]?]|join(",")),
+    .savedAt
+  ]) | @csv
+' metadata_*.json > omnivore-export.csv
 ```
